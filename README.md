@@ -7,7 +7,7 @@
 Максимальный размер разделителя 255 байт.
 Максимальный размер выходной строки 35535 байт.
 
-Вы можете объявить несколько хранимых процедур с различными входными и выходными 
+Вы можете объявить несколько хранимых процедур с различными входными и выходными
 типами данных, если они преоббразуемы во внутренние типы данных, т.е.
 
 IN_TXT BLOB SUB_TYPE TEXT,
@@ -143,7 +143,7 @@ BEGIN
   RETURNS (
       OUT_DOUBLE DOUBLE PRECISION)
   EXTERNAL NAME 'SplitUdr!split' ENGINE UDR;
-END  
+END
 ^
 
 SET TERM ; ^
@@ -184,6 +184,7 @@ FROM lst
 LEFT JOIN SPLIT_UTILS.split_int(lst.b, ',') s ON TRUE
 ```
 
+```
 План
 PLAN JOIN (LST R NATURAL, S NATURAL)
 
@@ -197,6 +198,7 @@ Memory buffers = 16 384
 Reads from disk to cache = 1
 Writes from cache to disk = 0
 Чтений из кэша = 2 670
+```
 
 ```sql
 WITH lst
@@ -208,6 +210,7 @@ SELECT
 FROM lst
 ```
 
+```
 План
 PLAN (LST R NATURAL)
 
@@ -221,7 +224,6 @@ Memory buffers = 16 384
 Reads from disk to cache = 0
 Writes from cache to disk = 667
 Чтений из кэша = 1 998
+```
 
 Таким образом BLOB размером 6888895 = 6.8Мбайт был разобран за ~1,1 секунды.
-
-
