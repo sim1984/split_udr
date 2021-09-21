@@ -227,3 +227,10 @@ Writes from cache to disk = 667
 ```
 
 Таким образом BLOB размером 6888895 = 6.8Мбайт был разобран за ~1,1 секунды.
+
+## Скачать
+
+Скачать готовые сборки можно по ссылкам:
+* [SplitUdr_Win_x64.zip](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Win_x64.zip)
+* [SplitUdr_Win_x86.zip](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Win_x86.zip)
+* [SplitUdr_Linux_x64.zip](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Linux_x64.zip)
