@@ -274,6 +274,6 @@ EXTERNAL NAME 'splitudr!strtok_s' ENGINE UDR;
 ## Скачать
 
 Скачать готовые сборки можно по ссылкам:
-* [SplitUdr_Win_x64.zip](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Win_x64.zip)
-* [SplitUdr_Win_x86.zip](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Win_x86.zip)
-* [SplitUdr_Linux_x64.zip](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Linux_x64.zip)
+* [SplitUdr_Win_x64.zip](https://github.com/sim1984/split_udr/releases/download/1.1/SplitUdr_Win_x64.zip)
+* [SplitUdr_Win_x86.zip](https://github.com/sim1984/split_udr/releases/download/1.1/SplitUdr_Win_x86.zip)
+* [SplitUdr_Linux_x64.zip](https://github.com/sim1984/split_udr/releases/download/1.1/SplitUdr_Linux_x64.zip)
