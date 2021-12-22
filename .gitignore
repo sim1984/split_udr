@@ -16,7 +16,10 @@ Thumbs.db
 *.stat
 *.tvsconfig
 *.~*
+*.aps
+*.so
 lib/
 x64/
 Win32/
+Linux_x64/
 .vs/

@@ -27,6 +27,9 @@
   <ItemGroup>
     <None Include="defs\udr_plugin.def" />
   </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="split_udr.rc" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <ProjectGuid>{38960C55-869A-466C-B469-11BF3BF5E34E}</ProjectGuid>

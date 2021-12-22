@@ -1,21 +1,16 @@
-Пример написания внешней процедуры SPLIT на С++
+Библиотека SplitUdr
 ================================================
 
 Компиляция проводилась Visual Studio 2019 Community.
 
-Процедура разбивает входной BLOB по разделителю укангом во втором параметре.
+## Пакет SPLIT_UTILS
+
+Пакет SPLIT_UTILS содержит набор хранимых процедур, которые разбивают входной BLOB по
+разделителю указангом во втором параметре.
+
 Максимальный размер разделителя 255 байт.
 Максимальный размер выходной строки 35535 байт.
 
-Вы можете объявить несколько хранимых процедур с различными входными и выходными
-типами данных, если они преобразуемы во внутренние типы данных, т.е.
-
-IN_TXT BLOB SUB_TYPE TEXT,
-IN_SEPARATOR VARCHAR(255) 
-
-OUT_TXT VARCHAR(35535)
-
-Например можно объявить следующий пакет:
 
 ```sql
 SET TERM ^ ;
@@ -149,6 +144,13 @@ END
 SET TERM ; ^
 ```
 
+Вы также можете объявить ещё несколько хранимых процедур с различными входными
+и выходными типами данных, если они преобразуемы во внутренние типы данных, т.е.
+
+* IN_TXT BLOB SUB_TYPE TEXT
+* IN_SEPARATOR VARCHAR(255) 
+* OUT_TXT VARCHAR(35535)
+
 Для тестирования производительности, создаём процедуру генерации чисел.
 
 ```sql
@@ -227,6 +229,47 @@ Writes from cache to disk = 667
 ```
 
 Таким образом BLOB размером 6888895 = 6.8Мбайт был разобран за ~1,1 секунды.
+
+## Процедуры Split_Words
+
+SplitUDR также содержит процедуру разбиения текста на отдельные слова. Она объявлена следующим образом:
+
+```sql
+CREATE OR ALTER PROCEDURE SPLIT_WORDS (
+    IN_TXT        BLOB SUB_TYPE TEXT CHARACTER SET UTF8,
+    IN_SEPARATORS VARCHAR(50) CHARACTER SET UTF8 DEFAULT NULL)
+RETURNS (
+    WORD VARCHAR(8191) CHARACTER SET UTF8)
+EXTERNAL NAME 'splitudr!strtok' ENGINE UDR;
+
+CREATE OR ALTER PROCEDURE SPLIT_WORDS_S (
+    IN_TXT        VARCHAR(8191) CHARACTER SET UTF8,
+    IN_SEPARATORS VARCHAR(50) CHARACTER SET UTF8 DEFAULT NULL)
+RETURNS (
+    WORD VARCHAR(8191) CHARACTER SET UTF8)
+EXTERNAL NAME 'splitudr!strtok_s' ENGINE UDR;
+```
+
+Параметры:
+
+* IN_TXT - входной текст BLOB или VARCHAR(8191)
+* IN_SEPARATORS - список разделителей (строка с симовлами раздителей), если
+не указано, то используются разделители " \n\r\t,.?!:;/\\|<>[]{}()@#$%^&*-+='\"~`"
+
+Пример использования:
+
+```sql
+  SELECT
+    w.WORD
+  FROM DOCS
+  LEFT JOIN SPLIT_WORDS(DOCS.CONTENT) w
+  WHERE DOCS.DOC_ID = 4
+```
+
+## Установка
+
+1. Перенести в каталог plugins/udr файлы splitudr.ddl (windows) или libsplitudr.so (linux) из zip архива
+2. Выполнить скрипт регистрации [split-udr.sql](https://github.com/sim1984/split_udr/releases/download/1.0/SplitUdr_Win_x64.zip)
 
 ## Скачать
 
