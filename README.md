@@ -269,7 +269,7 @@ EXTERNAL NAME 'splitudr!strtok_s' ENGINE UDR;
 ## Установка
 
 1. Перенести в каталог plugins/udr файлы splitudr.ddl (windows) или libsplitudr.so (linux) из zip архива
-2. Выполнить скрипт регистрации [split-udr.sql](https://github.com/sim1984/split_udr/blob/master/split-udr.sql)
+2. Выполнить скрипт регистрации [split-udr.sql](https://github.com/sim1984/split_udr/sql/split-udr.sql)
 
 ## Скачать
 
