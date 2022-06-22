@@ -15,12 +15,15 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="SplitProcedure.cpp">
+    <ClCompile Include="src\SplitProcedure.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="SplitUDR.h">
+    <ClInclude Include="src\SplitUDR.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="src\split_build_no.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
@@ -30,7 +33,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="split_udr.rc">
+    <ResourceCompile Include="src\split_udr.rc">
       <Filter>Файлы ресурсов</Filter>
     </ResourceCompile>
   </ItemGroup>

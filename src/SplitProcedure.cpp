@@ -2,8 +2,12 @@
 
 #include "SplitUdr.h"
 #include <sstream>
+#include <memory>
 
 using namespace Firebird;
+
+static const size_t MAX_SEGMENT_SIZE = 65535;
+static const size_t MAX_VARCHAR_SIZE = 32765;
 
 /***
 create procedure split_str (
@@ -60,14 +64,14 @@ FB_UDR_FETCH_PROCEDURE
 	if ((next = str.find(delim, prev)) != std::string::npos) {
 		// пока находим в строке разделитель
 		// возвращаем строки между разделителями		
-		out->txt.length = next - prev;
+		out->txt.length = static_cast<ISC_SHORT>(next - prev);
 		str.copy(out->txt.str, out->txt.length, prev);
 		prev = next + delta;
 		stopFlag = prev >= str.length();
 		return true;
 	}
 	next = str.length();
-	out->txt.length = next - prev;
+	out->txt.length = static_cast<ISC_SHORT>(next - prev);
 	str.copy(out->txt.str, out->txt.length, prev);
 	prev = next + delta;
 	stopFlag = prev >= str.length();
@@ -113,13 +117,15 @@ FB_UDR_EXECUTE_PROCEDURE
 
 		//const unsigned char bpb[] = { isc_bpb_version1,  isc_bpb_type, 1, isc_bpb_type_stream };
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
-		// читаем первые ~32Kбайт
 		std::stringstream ss("");
-		for (int n = 0; !eof && n < 32765; ) {
-			char buffer[32765];
-			unsigned int l = 0;
-			switch (blob->getSegment(status, sizeof(buffer), &buffer[0], &l))
-			{
+		// читаем первые ~32Kбайт
+		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		{
+			char* buffer = b.get();
+			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
+				unsigned int l = 0;
+				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
+				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
 					ss.write(buffer, l);
@@ -129,6 +135,7 @@ FB_UDR_EXECUTE_PROCEDURE
 					blob->close(status);
 					eof = true;
 					break;
+				}
 			}
 		}
 		str = ss.str();
@@ -167,7 +174,7 @@ FB_UDR_FETCH_PROCEDURE
 			};
 			throw Firebird::FbException(status, statusVector);
 		}
-		out->txt.length = next - prev;
+		out->txt.length = static_cast<ISC_SHORT>(next - prev);
 		str.copy(out->txt.str, out->txt.length, prev);
 		prev = next + delta;
 		return true;
@@ -178,11 +185,13 @@ FB_UDR_FETCH_PROCEDURE
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
 		std::stringstream ss("");
-		for (int n = 0; !eof && n < 32765; ) {
-			char buffer[32765];
-			unsigned int l = 0;
-			switch (blob->getSegment(status, sizeof(buffer), &buffer[0], &l))
-			{
+		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		{
+			char* buffer = b.get();
+			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
+				unsigned int l = 0;
+				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
+				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
 					ss.write(buffer, l);
@@ -192,6 +201,7 @@ FB_UDR_FETCH_PROCEDURE
 					blob->close(status);
 					eof = true;
 					break;
+				}
 			}
 		}
 		// удаляем из строки всё кроме части
@@ -217,7 +227,7 @@ FB_UDR_FETCH_PROCEDURE
 		};
 		throw Firebird::FbException(status, statusVector);
 	}
-	out->txt.length = next - prev;
+	out->txt.length = static_cast<ISC_SHORT>(next - prev);
 	str.copy(out->txt.str, out->txt.length, prev);
 	prev = next + delta;
 	stopFlag = eof && prev >= str.length();
@@ -291,7 +301,7 @@ FB_UDR_FETCH_PROCEDURE
 			continue;
 		}
 		// копируем результат в выходное сообщение
-		out->txt.length = length;
+		out->txt.length = static_cast<ISC_SHORT>(length);
 		str.copy(out->txt.str, out->txt.length, prev);
 
 		prev = next + 1;
@@ -307,7 +317,7 @@ FB_UDR_FETCH_PROCEDURE
 		return false;
 	}
 	// копируем результат в выходное сообщение
-	out->txt.length = length;
+	out->txt.length = static_cast<ISC_SHORT>(length);
 	str.copy(out->txt.str, out->txt.length, prev);
 	prev = next + 1;
 	// инициализация флага остановки
@@ -359,11 +369,13 @@ FB_UDR_EXECUTE_PROCEDURE
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
 		// читаем первые ~32Kбайт
 		std::stringstream ss("");
-		for (int n = 0; !eof && n < 32765; ) {
-			char buffer[32765];
-			unsigned int l = 0;
-			switch (blob->getSegment(status, sizeof(buffer), &buffer[0], &l))
-			{
+		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		{
+			char* buffer = b.get();
+			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
+				unsigned int l = 0;
+				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
+				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
 					ss.write(buffer, l);
@@ -373,6 +385,7 @@ FB_UDR_EXECUTE_PROCEDURE
 					blob->close(status);
 					eof = true;
 					break;
+				}
 			}
 		}
 		str = ss.str();
@@ -418,7 +431,7 @@ FB_UDR_FETCH_PROCEDURE
 			throw Firebird::FbException(status, statusVector);
 		}
 		// копируем результат в выходное сообщение
-		out->txt.length = length;
+		out->txt.length = static_cast<ISC_SHORT>(length);
 		str.copy(out->txt.str, out->txt.length, prev);
 		
 		prev = next + 1;
@@ -430,12 +443,14 @@ FB_UDR_FETCH_PROCEDURE
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
 		std::stringstream ss("");
-		for (int n = 0; !eof && n < 32765; ) {
-			char buffer[32765];
-			unsigned int l = 0;
-			switch (blob->getSegment(status, sizeof(buffer), &buffer[0], &l))
-			{
-		 	    case IStatus::RESULT_OK:
+		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		{
+			char* buffer = b.get();
+			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
+				unsigned int l = 0;
+				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
+				{
+				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
 					ss.write(buffer, l);
 					n += l;
@@ -444,6 +459,7 @@ FB_UDR_FETCH_PROCEDURE
 					blob->close(status);
 					eof = true;
 					break;
+				}
 			}
 		}
 		// удаляем из строки всё кроме части
@@ -481,7 +497,7 @@ FB_UDR_FETCH_PROCEDURE
 			throw Firebird::FbException(status, statusVector);
 		}
 		// копируем результат в выходное сообщение
-		out->txt.length = length;
+		out->txt.length = static_cast<ISC_SHORT>(length);
 		str.copy(out->txt.str, out->txt.length, prev);
 		prev = next + 1;
 		// инициализация флага остановки
