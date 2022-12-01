@@ -133,6 +133,7 @@ FB_UDR_EXECUTE_PROCEDURE
 					continue;
 				default:
 					blob->close(status);
+					blob.release();
 					eof = true;
 					break;
 				}
@@ -199,6 +200,7 @@ FB_UDR_FETCH_PROCEDURE
 					continue;
 				default:
 					blob->close(status);
+					blob.release();
 					eof = true;
 					break;
 				}
@@ -383,6 +385,7 @@ FB_UDR_EXECUTE_PROCEDURE
 					continue;
 				default:
 					blob->close(status);
+					blob.release();
 					eof = true;
 					break;
 				}
@@ -457,6 +460,7 @@ FB_UDR_FETCH_PROCEDURE
 					continue;
 				default:
 					blob->close(status);
+					blob.release();
 					eof = true;
 					break;
 				}
