@@ -13,7 +13,7 @@
 
 cmake_minimum_required (VERSION 3.5)
 
-project (splitudr VERSION 1.1.0)
+project (splitudr VERSION 1.1.1)
 
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/build)
 
