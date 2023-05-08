@@ -3,6 +3,7 @@
 #include "SplitUdr.h"
 #include <sstream>
 #include <memory>
+#include <vector>
 
 using namespace Firebird;
 
@@ -115,13 +116,12 @@ FB_UDR_EXECUTE_PROCEDURE
 		att.reset(context->getAttachment(status));
 		tra.reset(context->getTransaction(status));
 
-		//const unsigned char bpb[] = { isc_bpb_version1,  isc_bpb_type, 1, isc_bpb_type_stream };
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
 		std::stringstream ss("");
 		// читаем первые ~32Kбайт
-		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
-			char* buffer = b.get();
+			char* buffer = vBuffer.data();
 			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
 				unsigned int l = 0;
 				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
@@ -186,9 +186,9 @@ FB_UDR_FETCH_PROCEDURE
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
 		std::stringstream ss("");
-		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
-			char* buffer = b.get();
+			char* buffer = vBuffer.data();
 			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
 				unsigned int l = 0;
 				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
@@ -371,9 +371,9 @@ FB_UDR_EXECUTE_PROCEDURE
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
 		// читаем первые ~32Kбайт
 		std::stringstream ss("");
-		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
-			char* buffer = b.get();
+			char* buffer = vBuffer.data();
 			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
 				unsigned int l = 0;
 				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
@@ -446,9 +446,9 @@ FB_UDR_FETCH_PROCEDURE
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
 		std::stringstream ss("");
-		auto b = std::make_unique<char[]>(MAX_VARCHAR_SIZE + 1);
+		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
-			char* buffer = b.get();
+			char* buffer = vBuffer.data();
 			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
 				unsigned int l = 0;
 				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
