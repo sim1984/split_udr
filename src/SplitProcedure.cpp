@@ -7,8 +7,8 @@
 
 using namespace Firebird;
 
-static const size_t MAX_SEGMENT_SIZE = 65535;
-static const size_t MAX_VARCHAR_SIZE = 32765;
+static constexpr size_t MAX_SEGMENT_SIZE = 65535;
+static constexpr size_t MAX_VARCHAR_SIZE = 32765;
 
 /***
 create procedure split_str (
@@ -40,16 +40,16 @@ FB_UDR_EXECUTE_PROCEDURE
 	}
 	else
 	{
-		str.assign(in->txt.str, in->txt.length);
+		str = std::string_view(in->txt.str, in->txt.length);
 
-		delim.assign(in->separator.str, in->separator.length);
+		delim = std::string_view(in->separator.str, in->separator.length);
 		delta = delim.length();
 	}
 }
 
 
-std::string str;
-std::string delim;
+std::string_view str;
+std::string_view delim;
 size_t prev = 0;
 size_t next = 0;
 size_t delta = 0;
@@ -110,7 +110,7 @@ FB_UDR_EXECUTE_PROCEDURE
 	}
 	else
 	{
-		delim.assign(in->separator.str, in->separator.length);
+		delim = std::string_view(in->separator.str, in->separator.length);
 		delta = delim.length();
 
 		att.reset(context->getAttachment(status));
@@ -150,7 +150,7 @@ AutoRelease<IBlob> blob;
 
 
 std::string str;
-std::string delim;
+std::string_view delim;
 size_t prev = 0;
 size_t next = 0;
 size_t delta = 0;
@@ -267,20 +267,20 @@ FB_UDR_EXECUTE_PROCEDURE
 	}
 	else
 	{
-		str.assign(in->txt.str, in->txt.length);
+		str = std::string_view(in->txt.str, in->txt.length);
 
 		if (in->separatorsNull) {
-			separators = " \n\r\t,.?!:;/\\|<>[]{}()@#$%^&*-+='\"~`";
+			separators = std::string_view(" \n\r\t,.?!:;/\\|<>[]{}()@#$%^&*-+='\"~`");
 		}
 		else
-		   separators.assign(in->separators.str, in->separators.length);
+		   separators = std::string_view(in->separators.str, in->separators.length);
 
 	}
 }
 
 
-std::string str;
-std::string separators;
+std::string_view str;
+std::string_view separators;
 size_t prev = 0;
 size_t next = 0;
 bool stopFlag = false;
@@ -360,10 +360,10 @@ FB_UDR_EXECUTE_PROCEDURE
 	else
 	{
 		if (in->separatorsNull) {
-			separators = " \n\r\t,.?!:;/\\|<>[]{}()@#$%^&*-+='\"~`";
+			separators = std::string_view(" \n\r\t,.?!:;/\\|<>[]{}()@#$%^&*-+='\"~`");
 		}
 		else
-		   separators.assign(in->separators.str, in->separators.length);
+		   separators = std::string_view(in->separators.str, in->separators.length);
 
 		att.reset(context->getAttachment(status));
 		tra.reset(context->getTransaction(status));
@@ -402,7 +402,7 @@ AutoRelease<IBlob> blob;
 
 
 std::string str;
-std::string separators;
+std::string_view separators;
 size_t prev = 0;
 size_t next = 0;
 bool stopFlag = false;

@@ -29,9 +29,9 @@ option(BUILD_SHARED_LIBS "Build shared library" ON)
 
 
 ###############################################################################
-# Require and enable C++ 0x/11/14
+# Require and enable C++ 0x/11/14/17
 ############
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 message(STATUS "splitudr compile: C++${CMAKE_CXX_STANDARD}")
@@ -59,7 +59,7 @@ elseif(CMAKE_CXX_COMPILER_ID MATCHES "Intel")
 elseif(MSVC)
 	string(REGEX REPLACE "/W[0-4]" "/W4" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	if(MSVC_VERSION LESS 1900)
-		message(FATAL_ERROR "splitudr build: Build requires C++14-compliant compiler")
+		message(FATAL_ERROR "splitudr build: Build requires C++17-compliant compiler")
 	endif()
 endif()
 
