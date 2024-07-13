@@ -1,14 +1,20 @@
 
 
 #include "SplitUdr.h"
-#include <sstream>
-#include <memory>
+#include <string>
+#include <string_view>
 #include <vector>
+
+
+namespace {
+
+constexpr size_t MAX_SEGMENT_SIZE = 65535;
+constexpr size_t MAX_VARCHAR_SIZE = 32765;
+
+}
 
 using namespace Firebird;
 
-static constexpr size_t MAX_SEGMENT_SIZE = 65535;
-static constexpr size_t MAX_VARCHAR_SIZE = 32765;
 
 /***
 create procedure split_str (
@@ -117,7 +123,6 @@ FB_UDR_EXECUTE_PROCEDURE
 		tra.reset(context->getTransaction(status));
 
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
-		std::stringstream ss("");
 		// читаем первые ~32Kбайт
 		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
@@ -128,7 +133,7 @@ FB_UDR_EXECUTE_PROCEDURE
 				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
-					ss.write(buffer, l);
+                    str.append(buffer, l);
 					n += l;
 					continue;
 				default:
@@ -139,15 +144,12 @@ FB_UDR_EXECUTE_PROCEDURE
 				}
 			}
 		}
-		str = ss.str();
 	}
 }
-
 
 AutoRelease<IAttachment> att;
 AutoRelease<ITransaction> tra;
 AutoRelease<IBlob> blob;
-
 
 std::string str;
 std::string_view delim;
@@ -185,7 +187,7 @@ FB_UDR_FETCH_PROCEDURE
 	if (!eof) {
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
-		std::stringstream ss("");
+		std::string s;
 		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
 			char* buffer = vBuffer.data();
@@ -195,7 +197,7 @@ FB_UDR_FETCH_PROCEDURE
 				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
-					ss.write(buffer, l);
+                    s.append(buffer, l);
 					n += l;
 					continue;
 				default:
@@ -211,7 +213,7 @@ FB_UDR_FETCH_PROCEDURE
 		str.erase(0, prev);
 		prev = 0;
 		// и добавляем в неё прочитанной из BLOB
-		str.append(ss.str());
+		str += s;
 		
 		// ищем разделитель
 		next = str.find(delim, prev);
@@ -277,7 +279,6 @@ FB_UDR_EXECUTE_PROCEDURE
 
 	}
 }
-
 
 std::string_view str;
 std::string_view separators;
@@ -370,7 +371,6 @@ FB_UDR_EXECUTE_PROCEDURE
 
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
 		// читаем первые ~32Kбайт
-		std::stringstream ss("");
 		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
 			char* buffer = vBuffer.data();
@@ -380,7 +380,7 @@ FB_UDR_EXECUTE_PROCEDURE
 				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
-					ss.write(buffer, l);
+					str.append(buffer, l);
 					n += l;
 					continue;
 				default:
@@ -391,7 +391,6 @@ FB_UDR_EXECUTE_PROCEDURE
 				}
 			}
 		}
-		str = ss.str();
 	}
 }
 
@@ -399,7 +398,6 @@ FB_UDR_EXECUTE_PROCEDURE
 AutoRelease<IAttachment> att;
 AutoRelease<ITransaction> tra;
 AutoRelease<IBlob> blob;
-
 
 std::string str;
 std::string_view separators;
@@ -445,7 +443,7 @@ FB_UDR_FETCH_PROCEDURE
 	if (!eof) {
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
-		std::stringstream ss("");
+		std::string s;
 		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
 		{
 			char* buffer = vBuffer.data();
@@ -455,7 +453,7 @@ FB_UDR_FETCH_PROCEDURE
 				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
-					ss.write(buffer, l);
+					s.append(buffer, l);
 					n += l;
 					continue;
 				default:
@@ -471,7 +469,7 @@ FB_UDR_FETCH_PROCEDURE
 		str.erase(0, prev);
 		prev = 0;
 		// и добавляем в неё прочитанной из BLOB
-		str.append(ss.str());
+		str.append(s);
 
 		// ищем первый из символов separators в строке str начиная с позиции prev
 		next = str.find_first_of(separators, prev);

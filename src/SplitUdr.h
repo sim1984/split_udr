@@ -27,10 +27,9 @@
 
 #include "ibase.h"
 #include "firebird/UdrCppEngine.h"
-#include <assert.h>
-#include <stdio.h>
 
-namespace
+
+namespace Firebird
 {
 	template <typename T>
 	class AutoReleaseClear
@@ -88,6 +87,10 @@ namespace
 			Clear::clear(ptr);
 		}
 
+		// not implemented
+        AutoImpl<T, Clear>(AutoImpl<T, Clear>&) = delete;
+        void operator=(AutoImpl<T, Clear>&) = delete;
+
 		AutoImpl<T, Clear>& operator =(T* aPtr)
 		{
 			Clear::clear(ptr);
@@ -135,11 +138,6 @@ namespace
 				ptr = aPtr;
 			}
 		}
-
-	private:
-		// not implemented
-		AutoImpl<T, Clear>(AutoImpl<T, Clear>&);
-		void operator =(AutoImpl<T, Clear>&);
 
 	private:
 		T* ptr;
