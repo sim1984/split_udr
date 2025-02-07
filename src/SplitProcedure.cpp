@@ -8,8 +8,30 @@
 
 namespace {
 
-constexpr size_t MAX_SEGMENT_SIZE = 65535;
+constexpr size_t BUFFER_SIZE = 32768;
 constexpr size_t MAX_VARCHAR_SIZE = 32765;
+
+unsigned int readBlobData(Firebird::ThrowStatusWrapper* status, Firebird::IBlob* blob, unsigned int buffer_size, char* buffer)
+{
+	unsigned int readBytes = 0;
+	while (buffer_size > 0) {
+		unsigned int buffer_length = std::min(buffer_size, 32768u);
+		unsigned int segment_length = 0;
+		auto result = blob->getSegment(status, buffer_length, buffer + static_cast<size_t>(readBytes), &segment_length);
+		switch (result)
+		{
+		case Firebird::IStatus::RESULT_OK:
+		case Firebird::IStatus::RESULT_SEGMENT:
+			buffer_size -= segment_length;
+			readBytes += segment_length;
+			break;
+		default:
+			buffer_size = 0;
+			break;
+		}
+	}
+	return readBytes;
+}
 
 }
 
@@ -47,9 +69,7 @@ FB_UDR_EXECUTE_PROCEDURE
 	else
 	{
 		str = std::string_view(in->txt.str, in->txt.length);
-
 		delim = std::string_view(in->separator.str, in->separator.length);
-		delta = delim.length();
 	}
 }
 
@@ -58,7 +78,6 @@ std::string_view str;
 std::string_view delim;
 size_t prev = 0;
 size_t next = 0;
-size_t delta = 0;
 bool stopFlag = false;
 
 FB_UDR_FETCH_PROCEDURE
@@ -73,14 +92,14 @@ FB_UDR_FETCH_PROCEDURE
 		// возвращаем строки между разделителями		
 		out->txt.length = static_cast<ISC_SHORT>(next - prev);
 		str.copy(out->txt.str, out->txt.length, prev);
-		prev = next + delta;
+		prev = next + static_cast<size_t>(in->separator.length);
 		stopFlag = prev >= str.length();
 		return true;
 	}
 	next = str.length();
 	out->txt.length = static_cast<ISC_SHORT>(next - prev);
 	str.copy(out->txt.str, out->txt.length, prev);
-	prev = next + delta;
+	prev = next + static_cast<size_t>(in->separator.length);
 	stopFlag = prev >= str.length();
 	return true;
 }
@@ -117,32 +136,21 @@ FB_UDR_EXECUTE_PROCEDURE
 	else
 	{
 		delim = std::string_view(in->separator.str, in->separator.length);
-		delta = delim.length();
 
 		att.reset(context->getAttachment(status));
 		tra.reset(context->getTransaction(status));
 
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
-		// читаем первые ~32Kбайт
-		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
-		{
-			char* buffer = vBuffer.data();
-			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
-				unsigned int l = 0;
-				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
-				{
-				case IStatus::RESULT_OK:
-				case IStatus::RESULT_SEGMENT:
-                    str.append(buffer, l);
-					n += l;
-					continue;
-				default:
-					blob->close(status);
-					blob.release();
-					eof = true;
-					break;
-				}
-			}
+		// резервируем буфер в двое больше, чем порция которой читаем
+		vBuffer.reserve(2 * BUFFER_SIZE);
+		auto length = readBlobData(status, blob, BUFFER_SIZE, vBuffer.data());
+		if (length > 0) {
+			str = std::string_view(vBuffer.data(), length);
+		}
+		else {
+			blob->close(status);
+			blob.release();
+			stopFlag = true;
 		}
 	}
 }
@@ -151,13 +159,11 @@ AutoRelease<IAttachment> att;
 AutoRelease<ITransaction> tra;
 AutoRelease<IBlob> blob;
 
-std::string str;
+std::string_view str;
 std::string_view delim;
-size_t prev = 0;
+std::vector<char> vBuffer;
 size_t next = 0;
-size_t delta = 0;
 bool stopFlag = false;
-bool eof = false;
 
 FB_UDR_FETCH_PROCEDURE
 {
@@ -166,10 +172,11 @@ FB_UDR_FETCH_PROCEDURE
 		return false;
 	}
 	out->txtNull = FB_FALSE;
-	if ((next = str.find(delim, prev)) != std::string::npos) {
+
+	if (next = str.find(delim); next != std::string::npos) {
 		// пока находим в строке разделитель
 		// возвращаем строки между разделителями		
-		if (next - prev > 32765) {
+		if (next > MAX_VARCHAR_SIZE) {
 			ISC_STATUS statusVector[] = {
 				 isc_arg_gds, isc_random,
 				 isc_arg_string, (ISC_STATUS)"Output buffer overflow",
@@ -177,53 +184,37 @@ FB_UDR_FETCH_PROCEDURE
 			};
 			throw Firebird::FbException(status, statusVector);
 		}
-		out->txt.length = static_cast<ISC_SHORT>(next - prev);
-		str.copy(out->txt.str, out->txt.length, prev);
-		prev = next + delta;
+		out->txt.length = static_cast<ISC_USHORT>(next);
+		str.copy(out->txt.str, out->txt.length);
+		str.remove_prefix(next + delim.length());
 		return true;
 	}
 	// строка после последнего разделителя не обязательно полная,
 	// разделитель может быть в не прочитанной части BLOB
-	if (!eof) {
-		// если BLOB прочитан не полностью, то
+	if (blob.hasData()) {
+		// копируем в буфер остаток строки
+		str.copy(vBuffer.data(), str.length(), 0);
+
 		// читаем следующие ~32Kбайт
-		std::string s;
-		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
-		{
-			char* buffer = vBuffer.data();
-			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
-				unsigned int l = 0;
-				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
-				{
-				case IStatus::RESULT_OK:
-				case IStatus::RESULT_SEGMENT:
-                    s.append(buffer, l);
-					n += l;
-					continue;
-				default:
-					blob->close(status);
-					blob.release();
-					eof = true;
-					break;
-				}
-			}
+		auto length = readBlobData(status, blob, BUFFER_SIZE, vBuffer.data() + str.length());
+		if (length > 0) {
+			str = std::string_view(vBuffer.data(), str.length() + length);
 		}
-		// удаляем из строки всё кроме части
-        // после последнего разделителя
-		str.erase(0, prev);
-		prev = 0;
-		// и добавляем в неё прочитанной из BLOB
-		str += s;
+		else {
+			blob->close(status);
+			blob.release();
+			stopFlag = true;
+		}
 		
 		// ищем разделитель
-		next = str.find(delim, prev);
+		next = str.find(delim);
 		if (next == std::string::npos)
 			next = str.length();
 	}
 	else {
 		next = str.length();
 	}
-	if (next - prev > 32765) {
+	if (next > MAX_VARCHAR_SIZE) {
 		ISC_STATUS statusVector[] = {
 			 isc_arg_gds, isc_random,
 			 isc_arg_string, (ISC_STATUS)"Output buffer overflow",
@@ -231,10 +222,16 @@ FB_UDR_FETCH_PROCEDURE
 		};
 		throw Firebird::FbException(status, statusVector);
 	}
-	out->txt.length = static_cast<ISC_SHORT>(next - prev);
-	str.copy(out->txt.str, out->txt.length, prev);
-	prev = next + delta;
-	stopFlag = eof && prev >= str.length();
+	out->txt.length = static_cast<ISC_SHORT>(next);
+	str.copy(out->txt.str, out->txt.length);
+	if (next + delim.length() <= str.length()) {
+		str.remove_prefix(next + delim.length());
+	}
+	else {
+		str.remove_prefix(next);
+	}
+
+	stopFlag = !blob.hasData() && str.empty();
 	return true;
 }
 FB_UDR_END_PROCEDURE
@@ -371,12 +368,12 @@ FB_UDR_EXECUTE_PROCEDURE
 
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
 		// читаем первые ~32Kбайт
-		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
+		std::vector<char> vBuffer(BUFFER_SIZE);
 		{
 			char* buffer = vBuffer.data();
-			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
+			for (size_t n = 0; !eof && n < BUFFER_SIZE; ) {
 				unsigned int l = 0;
-				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
+				switch (blob->getSegment(status, BUFFER_SIZE, buffer, &l))
 				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
@@ -423,7 +420,7 @@ FB_UDR_FETCH_PROCEDURE
 			prev = next + 1;
 			continue;
 		}
-		if (length > 32765) {
+		if (length > MAX_VARCHAR_SIZE) {
 			ISC_STATUS statusVector[] = {
 				 isc_arg_gds, isc_random,
 				 isc_arg_string, (ISC_STATUS)"Output buffer overflow",
@@ -444,12 +441,12 @@ FB_UDR_FETCH_PROCEDURE
 		// если BLOB прочитан не полностью, то
 		// читаем следующие ~32Kбайт
 		std::string s;
-		std::vector<char> vBuffer(MAX_VARCHAR_SIZE + 1);
+		std::vector<char> vBuffer(BUFFER_SIZE);
 		{
 			char* buffer = vBuffer.data();
-			for (size_t n = 0; !eof && n < MAX_VARCHAR_SIZE; ) {
+			for (size_t n = 0; !eof && n < BUFFER_SIZE; ) {
 				unsigned int l = 0;
-				switch (blob->getSegment(status, MAX_VARCHAR_SIZE, buffer, &l))
+				switch (blob->getSegment(status, BUFFER_SIZE, buffer, &l))
 				{
 				case IStatus::RESULT_OK:
 				case IStatus::RESULT_SEGMENT:
@@ -490,7 +487,7 @@ FB_UDR_FETCH_PROCEDURE
 			else
 				return false;
 		}
-		if (length > 32765) {
+		if (length > MAX_VARCHAR_SIZE) {
 			ISC_STATUS statusVector[] = {
 				 isc_arg_gds, isc_random,
 				 isc_arg_string, (ISC_STATUS)"Output buffer overflow",

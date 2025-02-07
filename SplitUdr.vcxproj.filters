@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="SQL">
+      <UniqueIdentifier>{e4e64040-f7e9-4564-a5a8-233037ca1f04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DOC">
+      <UniqueIdentifier>{6af6168c-ce3b-4145-bdfe-052fa2801be6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\SplitProcedure.cpp">
@@ -31,5 +37,13 @@
     <ResourceCompile Include="src\split_udr.rc">
       <Filter>Файлы ресурсов</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="sql\split-udr.sql">
+      <Filter>SQL</Filter>
+    </None>
+    <None Include="README.md">
+      <Filter>DOC</Filter>
+    </None>
   </ItemGroup>
 </Project>
