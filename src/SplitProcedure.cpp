@@ -88,8 +88,8 @@ FB_UDR_FETCH_PROCEDURE
 	}
 	out->txtNull = FB_FALSE;
 	if ((next = str.find(delim, prev)) != std::string::npos) {
-		// пока находим в строке разделитель
-		// возвращаем строки между разделителями		
+		// РїРѕРєР° РЅР°С…РѕРґРёРј РІ СЃС‚СЂРѕРєРµ СЂР°Р·РґРµР»РёС‚РµР»СЊ
+		// РІРѕР·РІСЂР°С‰Р°РµРј СЃС‚СЂРѕРєРё РјРµР¶РґСѓ СЂР°Р·РґРµР»РёС‚РµР»СЏРјРё		
 		out->txt.length = static_cast<ISC_SHORT>(next - prev);
 		str.copy(out->txt.str, out->txt.length, prev);
 		prev = next + static_cast<size_t>(in->separator.length);
@@ -141,7 +141,7 @@ FB_UDR_EXECUTE_PROCEDURE
 		tra.reset(context->getTransaction(status));
 
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
-		// резервируем буфер в двое больше, чем порция которой читаем
+		// СЂРµР·РµСЂРІРёСЂСѓРµРј Р±СѓС„РµСЂ РІ РґРІРѕРµ Р±РѕР»СЊС€Рµ, С‡РµРј РїРѕСЂС†РёСЏ РєРѕС‚РѕСЂРѕР№ С‡РёС‚Р°РµРј
 		vBuffer.reserve(2 * BUFFER_SIZE);
 		auto length = readBlobData(status, blob, BUFFER_SIZE, vBuffer.data());
 		if (length > 0) {
@@ -174,8 +174,8 @@ FB_UDR_FETCH_PROCEDURE
 	out->txtNull = FB_FALSE;
 
 	if (next = str.find(delim); next != std::string::npos) {
-		// пока находим в строке разделитель
-		// возвращаем строки между разделителями		
+		// РїРѕРєР° РЅР°С…РѕРґРёРј РІ СЃС‚СЂРѕРєРµ СЂР°Р·РґРµР»РёС‚РµР»СЊ
+		// РІРѕР·РІСЂР°С‰Р°РµРј СЃС‚СЂРѕРєРё РјРµР¶РґСѓ СЂР°Р·РґРµР»РёС‚РµР»СЏРјРё		
 		if (next > MAX_VARCHAR_SIZE) {
 			ISC_STATUS statusVector[] = {
 				 isc_arg_gds, isc_random,
@@ -189,13 +189,13 @@ FB_UDR_FETCH_PROCEDURE
 		str.remove_prefix(next + delim.length());
 		return true;
 	}
-	// строка после последнего разделителя не обязательно полная,
-	// разделитель может быть в не прочитанной части BLOB
+	// СЃС‚СЂРѕРєР° РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµРіРѕ СЂР°Р·РґРµР»РёС‚РµР»СЏ РЅРµ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РїРѕР»РЅР°СЏ,
+	// СЂР°Р·РґРµР»РёС‚РµР»СЊ РјРѕР¶РµС‚ Р±С‹С‚СЊ РІ РЅРµ РїСЂРѕС‡РёС‚Р°РЅРЅРѕР№ С‡Р°СЃС‚Рё BLOB
 	if (blob.hasData()) {
-		// копируем в буфер остаток строки
+		// РєРѕРїРёСЂСѓРµРј РІ Р±СѓС„РµСЂ РѕСЃС‚Р°С‚РѕРє СЃС‚СЂРѕРєРё
 		str.copy(vBuffer.data(), str.length(), 0);
 
-		// читаем следующие ~32Kбайт
+		// С‡РёС‚Р°РµРј СЃР»РµРґСѓСЋС‰РёРµ ~32KР±Р°Р№С‚
 		auto length = readBlobData(status, blob, BUFFER_SIZE, vBuffer.data() + str.length());
 		if (length > 0) {
 			str = std::string_view(vBuffer.data(), str.length() + length);
@@ -206,7 +206,7 @@ FB_UDR_FETCH_PROCEDURE
 			stopFlag = true;
 		}
 		
-		// ищем разделитель
+		// РёС‰РµРј СЂР°Р·РґРµР»РёС‚РµР»СЊ
 		next = str.find(delim);
 		if (next == std::string::npos)
 			next = str.length();
@@ -290,37 +290,37 @@ FB_UDR_FETCH_PROCEDURE
 		return false;
 	}
 	out->txtNull = FB_FALSE;
-	// ищем первый из символов separators в строке str начиная с позиции prev
+	// РёС‰РµРј РїРµСЂРІС‹Р№ РёР· СЃРёРјРІРѕР»РѕРІ separators РІ СЃС‚СЂРѕРєРµ str РЅР°С‡РёРЅР°СЏ СЃ РїРѕР·РёС†РёРё prev
 	while ((next = str.find_first_of(separators, prev)) != std::string::npos) {
-		// пока находим в строке разделитель
-		// возвращаем строки между разделителями	
+		// РїРѕРєР° РЅР°С…РѕРґРёРј РІ СЃС‚СЂРѕРєРµ СЂР°Р·РґРµР»РёС‚РµР»СЊ
+		// РІРѕР·РІСЂР°С‰Р°РµРј СЃС‚СЂРѕРєРё РјРµР¶РґСѓ СЂР°Р·РґРµР»РёС‚РµР»СЏРјРё	
 		const size_t length = next - prev;
-		// если строка получилась пустой ищем следующий разделитель
+		// РµСЃР»Рё СЃС‚СЂРѕРєР° РїРѕР»СѓС‡РёР»Р°СЃСЊ РїСѓСЃС‚РѕР№ РёС‰РµРј СЃР»РµРґСѓСЋС‰РёР№ СЂР°Р·РґРµР»РёС‚РµР»СЊ
 		if (length == 0) {
 			prev = next + 1;
 			continue;
 		}
-		// копируем результат в выходное сообщение
+		// РєРѕРїРёСЂСѓРµРј СЂРµР·СѓР»СЊС‚Р°С‚ РІ РІС‹С…РѕРґРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
 		out->txt.length = static_cast<ISC_SHORT>(length);
 		str.copy(out->txt.str, out->txt.length, prev);
 
 		prev = next + 1;
 		return true;
 	}
-	// ни одного разделителя не найдено, 
-	// словом является строка от предыдущего разделителя и до конца строки str
+	// РЅРё РѕРґРЅРѕРіРѕ СЂР°Р·РґРµР»РёС‚РµР»СЏ РЅРµ РЅР°Р№РґРµРЅРѕ, 
+	// СЃР»РѕРІРѕРј СЏРІР»СЏРµС‚СЃСЏ СЃС‚СЂРѕРєР° РѕС‚ РїСЂРµРґС‹РґСѓС‰РµРіРѕ СЂР°Р·РґРµР»РёС‚РµР»СЏ Рё РґРѕ РєРѕРЅС†Р° СЃС‚СЂРѕРєРё str
 	next = str.length();
 
 	const size_t length = next - prev;
-	// если строка получилась пустой значит результат не возвращаем
+	// РµСЃР»Рё СЃС‚СЂРѕРєР° РїРѕР»СѓС‡РёР»Р°СЃСЊ РїСѓСЃС‚РѕР№ Р·РЅР°С‡РёС‚ СЂРµР·СѓР»СЊС‚Р°С‚ РЅРµ РІРѕР·РІСЂР°С‰Р°РµРј
 	if (length == 0) {
 		return false;
 	}
-	// копируем результат в выходное сообщение
+	// РєРѕРїРёСЂСѓРµРј СЂРµР·СѓР»СЊС‚Р°С‚ РІ РІС‹С…РѕРґРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
 	out->txt.length = static_cast<ISC_SHORT>(length);
 	str.copy(out->txt.str, out->txt.length, prev);
 	prev = next + 1;
-	// инициализация флага остановки
+	// РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С„Р»Р°РіР° РѕСЃС‚Р°РЅРѕРІРєРё
 	stopFlag = prev >= str.length();
 	return true;
 
@@ -367,7 +367,7 @@ FB_UDR_EXECUTE_PROCEDURE
 		tra.reset(context->getTransaction(status));
 
 		blob.reset(att->openBlob(status, tra, &in->txt, 0, nullptr));
-		// читаем первые ~32Kбайт
+		// С‡РёС‚Р°РµРј РїРµСЂРІС‹Рµ ~32KР±Р°Р№С‚
 		std::vector<char> vBuffer(BUFFER_SIZE);
 		{
 			char* buffer = vBuffer.data();
@@ -410,12 +410,12 @@ FB_UDR_FETCH_PROCEDURE
 		return false;
 	}
 	out->txtNull = FB_FALSE;
-	// ищем первый из символов separators в строке str начиная с позиции prev
+	// РёС‰РµРј РїРµСЂРІС‹Р№ РёР· СЃРёРјРІРѕР»РѕРІ separators РІ СЃС‚СЂРѕРєРµ str РЅР°С‡РёРЅР°СЏ СЃ РїРѕР·РёС†РёРё prev
 	while ((next = str.find_first_of(separators, prev)) != std::string::npos) {
-		// пока находим в строке разделитель
-		// возвращаем строки между разделителями	
+		// РїРѕРєР° РЅР°С…РѕРґРёРј РІ СЃС‚СЂРѕРєРµ СЂР°Р·РґРµР»РёС‚РµР»СЊ
+		// РІРѕР·РІСЂР°С‰Р°РµРј СЃС‚СЂРѕРєРё РјРµР¶РґСѓ СЂР°Р·РґРµР»РёС‚РµР»СЏРјРё	
 		const size_t length = next - prev;
-		// если строка получилась пустой ищем следующий разделитель
+		// РµСЃР»Рё СЃС‚СЂРѕРєР° РїРѕР»СѓС‡РёР»Р°СЃСЊ РїСѓСЃС‚РѕР№ РёС‰РµРј СЃР»РµРґСѓСЋС‰РёР№ СЂР°Р·РґРµР»РёС‚РµР»СЊ
 		if (length == 0) {
 			prev = next + 1;
 			continue;
@@ -428,18 +428,18 @@ FB_UDR_FETCH_PROCEDURE
 			};
 			throw Firebird::FbException(status, statusVector);
 		}
-		// копируем результат в выходное сообщение
+		// РєРѕРїРёСЂСѓРµРј СЂРµР·СѓР»СЊС‚Р°С‚ РІ РІС‹С…РѕРґРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
 		out->txt.length = static_cast<ISC_SHORT>(length);
 		str.copy(out->txt.str, out->txt.length, prev);
 		
 		prev = next + 1;
 		return true;
 	}
-	// строка после последнего разделителя не обязательно полная,
-	// разделитель может быть в не прочитанной части BLOB
+	// СЃС‚СЂРѕРєР° РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµРіРѕ СЂР°Р·РґРµР»РёС‚РµР»СЏ РЅРµ РѕР±СЏР·Р°С‚РµР»СЊРЅРѕ РїРѕР»РЅР°СЏ,
+	// СЂР°Р·РґРµР»РёС‚РµР»СЊ РјРѕР¶РµС‚ Р±С‹С‚СЊ РІ РЅРµ РїСЂРѕС‡РёС‚Р°РЅРЅРѕР№ С‡Р°СЃС‚Рё BLOB
 	if (!eof) {
-		// если BLOB прочитан не полностью, то
-		// читаем следующие ~32Kбайт
+		// РµСЃР»Рё BLOB РїСЂРѕС‡РёС‚Р°РЅ РЅРµ РїРѕР»РЅРѕСЃС‚СЊСЋ, С‚Рѕ
+		// С‡РёС‚Р°РµРј СЃР»РµРґСѓСЋС‰РёРµ ~32KР±Р°Р№С‚
 		std::string s;
 		std::vector<char> vBuffer(BUFFER_SIZE);
 		{
@@ -461,14 +461,14 @@ FB_UDR_FETCH_PROCEDURE
 				}
 			}
 		}
-		// удаляем из строки всё кроме части
-		// после последнего разделителя
+		// СѓРґР°Р»СЏРµРј РёР· СЃС‚СЂРѕРєРё РІСЃС‘ РєСЂРѕРјРµ С‡Р°СЃС‚Рё
+		// РїРѕСЃР»Рµ РїРѕСЃР»РµРґРЅРµРіРѕ СЂР°Р·РґРµР»РёС‚РµР»СЏ
 		str.erase(0, prev);
 		prev = 0;
-		// и добавляем в неё прочитанной из BLOB
+		// Рё РґРѕР±Р°РІР»СЏРµРј РІ РЅРµС‘ РїСЂРѕС‡РёС‚Р°РЅРЅРѕР№ РёР· BLOB
 		str.append(s);
 
-		// ищем первый из символов separators в строке str начиная с позиции prev
+		// РёС‰РµРј РїРµСЂРІС‹Р№ РёР· СЃРёРјРІРѕР»РѕРІ separators РІ СЃС‚СЂРѕРєРµ str РЅР°С‡РёРЅР°СЏ СЃ РїРѕР·РёС†РёРё prev
 		next = str.find_first_of(separators, prev);
 		if (next == std::string::npos)
 			next = str.length();
@@ -478,7 +478,7 @@ FB_UDR_FETCH_PROCEDURE
 	}
 	while (true) {
 		const size_t length = next - prev;
-		// если строка получилась пустой ищем следующий разделитель
+		// РµСЃР»Рё СЃС‚СЂРѕРєР° РїРѕР»СѓС‡РёР»Р°СЃСЊ РїСѓСЃС‚РѕР№ РёС‰РµРј СЃР»РµРґСѓСЋС‰РёР№ СЂР°Р·РґРµР»РёС‚РµР»СЊ
 		if (length == 0) {
 			prev = next + 1;
 			next = str.find_first_of(separators, prev);
@@ -495,11 +495,11 @@ FB_UDR_FETCH_PROCEDURE
 			};
 			throw Firebird::FbException(status, statusVector);
 		}
-		// копируем результат в выходное сообщение
+		// РєРѕРїРёСЂСѓРµРј СЂРµР·СѓР»СЊС‚Р°С‚ РІ РІС‹С…РѕРґРЅРѕРµ СЃРѕРѕР±С‰РµРЅРёРµ
 		out->txt.length = static_cast<ISC_SHORT>(length);
 		str.copy(out->txt.str, out->txt.length, prev);
 		prev = next + 1;
-		// инициализация флага остановки
+		// РёРЅРёС†РёР°Р»РёР·Р°С†РёСЏ С„Р»Р°РіР° РѕСЃС‚Р°РЅРѕРІРєРё
 		stopFlag = eof && prev >= str.length();
 		return true;
 	}
